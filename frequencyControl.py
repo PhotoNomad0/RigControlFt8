@@ -1,8 +1,12 @@
 import requests
 import json
 import socket
+import pywsjtx
 
-sdrAngelUrl = 'http://127.0.0.1:8091/sdrangel/deviceset/0/device/settings'
+SDR_ANGEL_URL = 'http://127.0.0.1:8091/sdrangel/deviceset/0/device/settings'
+# WSJT-X UDP server details
+WSJTX_IP = '127.0.0.1'  # Replace with actual IP if needed
+WSJTX_PORT = 2237
 
 def put_json_to_url(url, data_dict):
     try:
@@ -15,7 +19,7 @@ def put_json_to_url(url, data_dict):
         return None
 
 def setSdrAngelSettings(newSettings):
-    json_data = put_json_to_url(sdrAngelUrl, newSettings)
+    json_data = put_json_to_url(SDR_ANGEL_URL, newSettings)
     return json_data
 
 def get_json_from_url(url):
@@ -28,7 +32,7 @@ def get_json_from_url(url):
         return None
 
 def getSdrAngelSettings():
-    json_data = get_json_from_url(sdrAngelUrl)
+    json_data = get_json_from_url(SDR_ANGEL_URL)
     return json_data
 
 def setAdsAngelFrequency(newFreq):
@@ -78,4 +82,25 @@ def start_udp_server(port):
 
 # Use the function
 # 2237 is the port
-start_udp_server(2237)
+# start_udp_server(WSJTX_PORT)
+
+# def sendCommandToWSJTx(command):
+#     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+#         encoded = command.encode()
+#         sock.sendto(encoded, (WSJTX_IP, WSJTX_PORT))
+#         print('Sent command', command)
+#         print('Sent encoded', encoded)
+# 
+# # Example commands
+# #sendCommandToWSJTx("FA000140740")  # Set frequency to 14.000 MHz
+# sendCommandToWSJTx("FA000280740")  # Set frequency to 14.000 MHz
+
+
+# Create a WSJT-X packet with the desired frequency
+packet = pywsjtx.WsjtxPacket(
+    packet_type=pywsjtx.PacketType.FREQUENCY,
+    frequency=14076000  # Frequency in Hz
+)
+
+# Send the packet to WSJT-X
+pywsjtx.udp_send(packet, 'localhost', 2237)  # Assumes WSJT-X is running on localhost and listening on port 2237
