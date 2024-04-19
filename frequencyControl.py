@@ -1,7 +1,9 @@
 import requests
 import json
 import socket
+import socketserver
 import pywsjtx
+import serial
 
 SDR_ANGEL_URL = 'http://127.0.0.1:8091/sdrangel/deviceset/0/device/settings'
 # WSJT-X UDP server details
@@ -96,11 +98,50 @@ def start_udp_server(port):
 # sendCommandToWSJTx("FA000280740")  # Set frequency to 14.000 MHz
 
 
-# Create a WSJT-X packet with the desired frequency
-packet = pywsjtx.WsjtxPacket(
-    packet_type=pywsjtx.PacketType.FREQUENCY,
-    frequency=14076000  # Frequency in Hz
-)
+# # Create a WSJT-X packet with the desired frequency
+# packet = pywsjtx.WsjtxPacket(
+#     packet_type=pywsjtx.PacketType.FREQUENCY,
+#     frequency=14076000  # Frequency in Hz
+# )
+# 
+# # Send the packet to WSJT-X
+# pywsjtx.udp_send(packet, 'localhost', 2237)  # Assumes WSJT-X is running on localhost and listening on port 2237
 
-# Send the packet to WSJT-X
-pywsjtx.udp_send(packet, 'localhost', 2237)  # Assumes WSJT-X is running on localhost and listening on port 2237
+
+# # Open serial port
+# ser = serial.Serial(
+#     port='/dev/ttys003',  # replace with your serial port
+#     baudrate=38400,      # set baud rate
+#     bytesize=8,         # number of data bits (5, 6, 7, 8)
+#     stopbits=1,         # number of stop bits (1, 1.5, 2)
+#     parity='N'          # parity check ('N'- None, 'E'- Even, 'O'- Odd)
+# )
+# 
+# print("Starting...")
+# 
+# while True:
+#     # Read a line from the serial port
+#     line = ser.readline().decode('utf-8').strip()
+# 
+#     # Print the line
+#     print(f"Received: '{line}'")
+# 
+#     # Write the line back to the serial port
+#     ser.write((line + '\n').encode('utf-8'))
+
+class TCPHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.msg = self.request.recv(1024).strip()
+        if self.msg == b"on<EOF>":
+            print("Turning On...")
+            self.request.sendall(b"SUCCESS<EOF>")
+        elif self.msg == b"off<EOF>":
+            print("Turning Off...")
+            self.request.sendall(b"SUCCESS<EOF>")
+
+
+HAMLIB_PORT = 4533
+host, port = WSJTX_IP, HAMLIB_PORT
+server = socketserver.TCPServer((host, port), TCPHandler)
+print("Server is starting on", host, port)
+server.serve_forever()
